@@ -521,10 +521,7 @@ var RNFS = {
       progressInterval: options.progressInterval || 0,
       readTimeout: options.readTimeout || 15000,
       connectionTimeout: options.connectionTimeout || 5000,
-      backgroundTimeout: options.backgroundTimeout || 3600000, // 1 hour
-      hasBeginCallback: options.begin instanceof Function,
-      hasProgressCallback: options.progress instanceof Function,
-      hasResumableCallback: options.resumable instanceof Function,
+      backgroundTimeout: options.backgroundTimeout || 3600000 // 1 hour
     };
 
     return {
@@ -559,14 +556,16 @@ var RNFS = {
 
     if (options.begin) {
       subscriptions.push(RNFS_NativeEventEmitter.addListener('UploadBegin', options.begin));
-    } else if (options.beginCallback) {
+    }
+    if (options.beginCallback && options.beginCallback instanceof Function) {
       // Deprecated
       subscriptions.push(RNFS_NativeEventEmitter.addListener('UploadBegin', options.beginCallback));
     }
 
     if (options.progress) {
       subscriptions.push(RNFS_NativeEventEmitter.addListener('UploadProgress', options.progress));
-    } else if (options.progressCallback) {
+    }
+    if (options.progressCallback && options.progressCallback instanceof Function) {
       // Deprecated
       subscriptions.push(RNFS_NativeEventEmitter.addListener('UploadProgress', options.progressCallback));
     }
@@ -578,9 +577,7 @@ var RNFS = {
       binaryStreamOnly: options.binaryStreamOnly || false,
       headers: options.headers || {},
       fields: options.fields || {},
-      method: options.method || 'POST',
-      hasBeginCallback: options.begin instanceof Function || options.beginCallback instanceof Function,
-      hasProgressCallback: options.progress instanceof Function || options.progressCallback instanceof Function,
+      method: options.method || 'POST'
     };
 
     return {

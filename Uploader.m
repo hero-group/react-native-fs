@@ -86,7 +86,7 @@
       }
       [reqBody appendData:[[NSString stringWithFormat:@"Content-Length: %ld\r\n\r\n", (long)[fileData length]] dataUsingEncoding:NSUTF8StringEncoding]];
     }
-
+  
     [reqBody appendData:fileData];
     if (!binaryStreamOnly) {
       [reqBody appendData:[@"\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
@@ -109,9 +109,7 @@
       return self->_params.completeCallback(str, response);
   }];
   [_task resume];
-  if (_params.beginCallback) {
-    _params.beginCallback();
-  }
+  _params.beginCallback();
 }
 
 - (NSString *)generateBoundaryString
@@ -141,9 +139,7 @@
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(NSInteger)totalBytesExpectedToSend
 {
-  if (_params.progressCallback) {
-    _params.progressCallback([NSNumber numberWithLongLong:totalBytesExpectedToSend], [NSNumber numberWithLongLong:totalBytesSent]);
-  }
+  return _params.progressCallback([NSNumber numberWithLongLong:totalBytesExpectedToSend], [NSNumber numberWithLongLong:totalBytesSent]);
 }
 
 - (void)stopUpload

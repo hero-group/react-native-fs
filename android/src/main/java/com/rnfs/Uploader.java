@@ -61,15 +61,13 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
         String name, filename, filetype;
         try {
             Object[] files = params.files.toArray();
-            boolean binaryStreamOnly = params.binaryStreamOnly;
 
             connection = (HttpURLConnection) params.src.openConnection();
             connection.setDoOutput(true);
             ReadableMapKeySetIterator headerIterator = params.headers.keySetIterator();
             connection.setRequestMethod(params.method);
-            if (!binaryStreamOnly) {
-                connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
-            }
+            connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+
             while (headerIterator.hasNextKey()) {
                 String key = headerIterator.nextKey();
                 String value = params.headers.getString(key);
@@ -83,7 +81,7 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
                 String value = params.fields.getString(key);
                 metaData += twoHyphens + boundary + crlf + "Content-Disposition: form-data; name=\"" + key + "\"" + crlf + crlf + value +crlf;
             }
-            stringData += metaData;
+
             fileHeader = new String[files.length];
             for (ReadableMap map : params.files) {
                 try {
@@ -98,45 +96,24 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
                 File file = new File(map.getString("filepath"));
                 long fileLength = file.length();
                 totalFileLength += fileLength;
-                if (!binaryStreamOnly) {
-                    String fileHeaderType = twoHyphens + boundary + crlf +
-                            "Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"" + crlf +
-                            "Content-Type: " + filetype + crlf;
-                    ;
-                    if (files.length - 1 == fileCount){
-                        totalFileLength += tail.length();
-                    }
-
-                    String fileLengthHeader = "Content-length: " + fileLength + crlf;
-                    fileHeader[fileCount] = fileHeaderType + fileLengthHeader + crlf;
-                    stringData += fileHeaderType + fileLengthHeader + crlf;
-                }
                 fileCount++;
             }
             fileCount = 0;
-            if (mParams.onUploadBegin != null) {
-                mParams.onUploadBegin.onUploadBegin();
-            }
-            if (!binaryStreamOnly) {
-                long requestLength = totalFileLength;
-                requestLength += stringData.length() + files.length * crlf.length();
-                connection.setRequestProperty("Content-length", "" +(int) requestLength);
-                connection.setFixedLengthStreamingMode((int)requestLength);
-            }
+            mParams.onUploadBegin.onUploadBegin();
+
+            long requestLength = totalFileLength;
+            requestLength += stringData.length() + files.length * crlf.length();
+            connection.setRequestProperty("Content-length", "" +(int) requestLength);
+            connection.setFixedLengthStreamingMode((int)requestLength);
+
             connection.connect();
 
             request = new DataOutputStream(connection.getOutputStream());
-            if (!binaryStreamOnly) {
-                request.writeBytes(metaData);
-            }
 
             byteSentTotal = 0;
             Runtime run = Runtime.getRuntime();
 
             for (ReadableMap map : params.files) {
-                if (!binaryStreamOnly) {
-                    request.writeBytes(fileHeader[fileCount]);
-                }
                 File file = new File(map.getString("filepath"));
                 int fileLength = (int) file.length();
                 int bytes_read = 0;
@@ -148,20 +125,16 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
                 byte[] buffer = new byte[buffer_size];
                 while ((bytes_read = bufInput.read(buffer)) != -1) {
                     request.write(buffer, 0, bytes_read);
-                    if (mParams.onUploadProgress != null) {
-                        byteSentTotal += bytes_read;
-                        mParams.onUploadProgress.onUploadProgress((int) totalFileLength, byteSentTotal);
-                    }
+                    byteSentTotal += bytes_read;
+                    mParams.onUploadProgress.onUploadProgress((int) totalFileLength, byteSentTotal);
                 }
-                if (!binaryStreamOnly) {
-                    request.writeBytes(crlf);
-                }
+
+                request.writeBytes(crlf); // To be removed. Kept for upload file size reason
+
                 fileCount++;
                 bufInput.close();
             }
-            if (!binaryStreamOnly) {
-                request.writeBytes(tail);
-            }
+
             request.flush();
             request.close();
 
